@@ -1,0 +1,50 @@
+Assignment B — HTLC (Hashed
+Time-Lock Contract)
+An HTLC (Hashed Time-Lock Contract) lets:
+●​ Alice claim BTC from Bob only if she knows a secret (preimage S) before a time
+limit.​
+●​ Bob can refund the BTC after the time limit expires.​
+1. Complete the HTLC script
+This is the locking (redeem) script that holds the funds.
+○​ OP_IF
+○​
+# Alice’s branch – can spend with the secret before
+timeout
+○​OP_HASH160 <Hash(S)> OP_EQUALVERIFY
+○​<AlicePubKey> OP_CHECKSIG
+○​ OP_ELSE
+○​# Bob’s refund branch – after 21 minutes
+○​<LockTime> OP_CHECKLOCKTIMEVERIFY OP_DROP
+○​<BobPubKey> OP_CHECKSIG
+○​ OP_ENDIF
+Explanation
+●​ OP_IF branch: executes if Alice provides 1 on the stack → requires the secret
+preimage S and her signature.
+○​
+2. Claiming transaction script (Alice)
+Alice wants to spend before 21 minutes, using her secret S.
+Unlocking script (scriptSig / witness):<signature_Alice> <S> 1
+Stack when executed:
+1.​ Push Alice’s signature​
+2.​ Push secret preimage S​
+3.​ Push 1 → chooses the OP_IF branch
+3. Refund transaction script (Bob)
+Bob wants refund after 21 minutes.
+Unlocking script:
+<signature_Bob> 0
+Stack:
+1.​ Push Bob’s signature​
+2.​ Push 0 → chooses the OP_ELSE branch​
+4. Test with sample hash and timeout
+Let’s pick sample values to make it concrete.
+●​ Secret: S = "ILoveBitcoin"​
+●​ Hash160(S): 4a5d6e...​
+●​ LockTime: 1260 seconds (≈ 21 minutes)​
+Example HTLC with real numbers
+OP_IF
+OP_HASH160 4a5d6e2c63a1234b9e1f4b123a8c78d12e3f45ab
+OP_EQUALVERIFY
+02a1633caf7c5c57c1f... OP_CHECKSIG
+OP_ELSE
+1260 OP_CHECKLOCKTIMEVERIFY OP_DROP03b7a24dfd9c91d2a8f... OP_CHECKSIG
+OP_ENDIF
